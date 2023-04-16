@@ -1,0 +1,71 @@
+title: "Portfolio 5: Creating A Random Dataset"
+author: "Ryan Wheat"
+date: "2023-04-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-packages}
+library(tidyr)
+library(dplyr)
+```
+
+Background: I need to create a dataframe for my 312 PSYC METHODS students to analyze. 
+
+The Topic: Previous research has found that wearing a backpack depletes mental resources such that objects seem further away when wearing one, than without wearing one. The scenario we seek to test is whether sugar and/or caffeine counteract such an effect. Thus, we have 2 (sugar vs. no sugar) X 2 (caffeine vs. no caffeine) experimental design.
+
+The students are already writing a method section for testing this hypothesis, but they need to write a results section as well -- and in order to do that, they need to have some results to analyze! That's where this portfolio comes into play (and we may do a few other fun things...)
+
+In this dataframe, a "0" indicates that no sugar was given to the participant, and "1" documents that the participant did, in fact, receive sugar as a function of the manipulation. The same pattern holds for caffeine: "0" = no, "1" = yes.
+
+The following chunk creates the dataset by identifying the conditions participants were randomly assigned to, and creating data values randomly sampled from a distribution centered on a mean and standard deviation that I identify. This simulates what an actual experiment is like: these scores are randomly sampled from the "population" distribution (which has been decided by me)!
+
+```{r create-dataframe}
+
+#creating the participants variable, upon which all other values are contingent
+
+participant <- c(1:120)
+
+#create dataframe, and add new variables
+
+backpack_data <- data.frame(participant)
+
+backpack_data <- backpack_data %>%
+  mutate(sugar = case_when(participant <= 60 ~ "0",
+                           participant > 60 ~ "1"),
+         caffeine = case_when(participant > 30 & participant <= 60 ~ "1",
+                              participant > 90 & participant <= 120 ~ "1",
+                              .default = "0"),
+         Distance_Est = c(rnorm(n = 30, mean = 30, sd = 5),
+                                             rnorm(n = 30, mean = 40, sd = 8),
+                                             rnorm(n = 30, mean = 30, sd = 8),
+                                             rnorm(n = 30, mean = 45, sd = 8)))
+
+view(backpack_data)
+```
+
+Let's run a 2 X 2 ANOVA on these data to see how the results shake out. Then, we can visualize our results as well.
+
+```{r}
+ 
+#run anova
+
+library(readr)
+library(multcompView)
+
+ANOVA <- aov(Distance_Est ~ sugar*caffeine, data = backpack_data)
+summary(ANOVA)
+
+```
+
+So we've got a main effect of caffeine, a trend of sugar, and an interaction. Let's plot our results so we can be more specific with this interpretation.
+
+```{r visualize-backpack}
+
+
+
+```
+
