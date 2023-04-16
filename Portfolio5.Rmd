@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r load-packages}
 library(tidyr)
+library(tidyverse)
 library(dplyr)
 ```
 
@@ -44,7 +45,9 @@ backpack_data <- backpack_data %>%
                                              rnorm(n = 30, mean = 30, sd = 8),
                                              rnorm(n = 30, mean = 45, sd = 8)))
 
-view(backpack_data)
+library(haven)
+
+write_sav(backpack_data, "backpack_data.sav")
 ```
 
 Let's run a 2 X 2 ANOVA on these data to see how the results shake out. Then, we can visualize our results as well.
@@ -61,11 +64,24 @@ summary(ANOVA)
 
 ```
 
-So we've got a main effect of caffeine, a trend of sugar, and an interaction. Let's plot our results so we can be more specific with this interpretation.
+So we've got a main effect of caffeine, a trend of sugar, and an interaction. Let's look at the descriptives, and plot our results so we can be more specific with this interpretation.
 
 ```{r visualize-backpack}
 
+library(Rmisc)
 
+backpack_data %>%
+  group_by(sugar, caffeine) %>%
+  summarise(mean_groups = mean(Distance_Est),
+            sd_groups = sd(Distance_Est)) %>%
+  ungroup()
+
+ggplot(backpack_data, aes(x = caffeine, y = Distance_Est, fill = sugar)) +
+  geom_col(position = "dodge") + 
+  labs(title = "The Effects of Caffeine and Sugar on Distance Perception", x = "Caffeine", y = "Estimated Distance (m)", fill = "Sugar") + 
+  theme_bw() +
+  scale_fill_manual(labels = c("Placebo Pill", "Sugar Pill"), values = c("wheat", "tan4" )) + 
+  scale_x_discrete("Caffeine", labels = c("Placebo Pill", "Caffeine Pill"))
 
 ```
 
