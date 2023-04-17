@@ -11,7 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r load-packages}
 library(tidyr)
 library(tidyverse)
-library(plyr)
 library(dplyr)
 ```
 
@@ -41,14 +40,43 @@ backpack_data <- backpack_data %>%
          caffeine = case_when(participant > 30 & participant <= 60 ~ "1",
                               participant > 90 & participant <= 120 ~ "1",
                               .default = "0"),
-         Distance_Est = c(rnorm(n = 30, mean = 30, sd = 5),
-                                             rnorm(n = 30, mean = 40, sd = 8),
-                                             rnorm(n = 30, mean = 30, sd = 8),
-                                             rnorm(n = 30, mean = 45, sd = 8)))
+         Distance_Est = c(rnorm(n = 30, mean = 150, sd = 25),
+                                             rnorm(n = 30, mean = 130, sd = 25),
+                                             rnorm(n = 30, mean = 140, sd = 25),
+                                             rnorm(n = 30, mean = 120, sd = 25)))
 
 library(haven)
 
 write_sav(backpack_data, "backpack_data.sav")
+```
+
+
+I also need to make a dataset for another TA, Grace, who is not familiar with R (but will be by this time next year!). The following is the code for her dataset.
+
+
+```{r grace-dataset}
+#creating the participants variable, upon which all other values are contingent
+
+participant <- c(1:120)
+
+#create dataframe, and add new variables
+
+backpack_data_grace <- data.frame(participant)
+
+backpack_data_grace <- backpack_data_grace %>%
+  mutate(sugar = case_when(participant <= 60 ~ "0",
+                           participant > 60 ~ "1"),
+         caffeine = case_when(participant > 30 & participant <= 60 ~ "1",
+                              participant > 90 & participant <= 120 ~ "1",
+                              .default = "0"),
+         Distance_Est = c(rnorm(n = 30, mean = 568, sd = 45),
+                                             rnorm(n = 30, mean = 528, sd = 45),
+                                             rnorm(n = 30, mean = 568, sd = 45),
+                                             rnorm(n = 30, mean = 528, sd = 45)))
+
+library(haven)
+
+write_sav(backpack_data_grace, "backpack_dataGrace.sav")
 ```
 
 Let's run a 2 X 2 ANOVA on these data to see how the results shake out. Then, we can visualize our results as well.
@@ -63,23 +91,74 @@ library(multcompView)
 ANOVA <- aov(Distance_Est ~ sugar*caffeine, data = backpack_data)
 summary(ANOVA)
 
+ANOVA_grace <- aov(Distance_Est ~ sugar*caffeine, data = backpack_data_grace)
+summary(ANOVA_grace)
+
 ```
 
-So we've got a main effect of caffeine, a trend of sugar, and an interaction. Let's look at the descriptives, and plot our results so we can be more specific with this interpretation.
+So we've got a main effect of caffeine, a main effect of sugar, and no interaction. Grace has a main effect of caffeine, but no main effect of sugar or an interaction. Let's look at the descriptives, and plot our results so we can be more specific with this interpretation.
 
 ```{r visualize-backpack}
+
+#calculate error bars
+
+standard_error <- function(x) {
+  se <- sd(x) / sqrt(length(x))
+  return(se)
+}
+
+#descriptives
 
 backpack_data %>%
   group_by(sugar, caffeine) %>%
   summarise(mean_groups = mean(Distance_Est),
-            sd_groups = sd(Distance_Est))
+            sd_groups = sd(Distance_Est),
+            se_groups = standard_error(Distance_Est)) %>%
+  ungroup()
+
+backpack_data_grace %>%
+  group_by(sugar, caffeine) %>%
+  summarise(mean_groups = mean(Distance_Est),
+            sd_groups = sd(Distance_Est),
+            se_groups = standard_error(Distance_Est)) %>%
+  ungroup()
+
+#visualize my data as a bar plot
 
 ggplot(backpack_data, aes(x = caffeine, y = Distance_Est, fill = sugar)) +
   geom_col(position = "dodge") + 
-  labs(title = "The Effects of Caffeine and Sugar on Distance Perception", x = "Caffeine", y = "Estimated Distance (m)", fill = "Sugar") + 
+  labs(title = "The Effects of Caffeine and Sugar on Distance Perception for Ryan's Data", x = "Caffeine", y = "Estimated Distance (ft)", fill = "Sugar") + 
   theme_bw() +
   scale_fill_manual(labels = c("Placebo Pill", "Sugar Pill"), values = c("wheat", "tan4" )) + 
   scale_x_discrete("Caffeine", labels = c("Placebo Pill", "Caffeine Pill"))
 
+#visualize Grace's data as a bar plot
+
+ggplot(backpack_data_grace, aes(x = caffeine, y = Distance_Est, fill = sugar)) +
+  geom_col(position = "dodge") + 
+  labs(title = "The Effects of Caffeine and Sugar on Distance Perception for Grace's Data", x = "Caffeine", y = "Estimated Distance (ft)", fill = "Sugar") + 
+  theme_bw() +
+  scale_fill_manual(labels = c("Placebo Pill", "Sugar Pill"), values = c("wheat", "tan4" )) + 
+  scale_x_discrete("Caffeine", labels = c("Placebo Pill", "Caffeine Pill"))
+
+#visualize another way for me
+
+ggplot(backpack_data, aes(x = caffeine, y = Distance_Est, fill = sugar)) + 
+  geom_violin() + 
+  labs(title = "The Effects of Caffeine and Sugar on Distance Perception (Ryan)", x  = "Caffeine", y = "Estimated Distance (ft)", fill = "Sugar") +
+  theme_bw() +
+  scale_fill_manual(labels = c("Placebo Pill", "Sugar Pill"), values = c("firebrick", "lightpink1")) +
+  scale_x_discrete("Caffeine", labels = c("Placebo Pill", "Caffeine Pill"))
+
+#visualize as violin for Grace
+
+ggplot(backpack_data_grace, aes(x = caffeine, y = Distance_Est, fill = sugar)) + 
+  geom_violin() + 
+  labs(title = "The Effects of Caffeine and Sugar on Distance Perception (Grace)", x  = "Caffeine", y = "Estimated Distance (ft)", fill = "Sugar") +
+  theme_bw() +
+  scale_fill_manual(labels = c("Placebo Pill", "Sugar Pill"), values = c("firebrick", "lightpink1")) +
+  scale_x_discrete("Caffeine", labels = c("Placebo Pill", "Caffeine Pill"))
+
 ```
 
+For my data, it seems that both caffeine and sugar each decrease how far people estimate an object to be. For Grace's data, this is only the case for caffeine. In neither dataframe, does the effect of either independent variable depend on the level of the other.
