@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r load-packages}
 library(tidyr)
 library(tidyverse)
+library(plyr)
 library(dplyr)
 ```
 
@@ -68,13 +69,10 @@ So we've got a main effect of caffeine, a trend of sugar, and an interaction. Le
 
 ```{r visualize-backpack}
 
-library(Rmisc)
-
 backpack_data %>%
   group_by(sugar, caffeine) %>%
   summarise(mean_groups = mean(Distance_Est),
-            sd_groups = sd(Distance_Est)) %>%
-  ungroup()
+            sd_groups = sd(Distance_Est))
 
 ggplot(backpack_data, aes(x = caffeine, y = Distance_Est, fill = sugar)) +
   geom_col(position = "dodge") + 
